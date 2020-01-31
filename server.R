@@ -1,5 +1,6 @@
 library(shiny)
 library(tidyverse)
+library(grid)
 
 theme_set(theme_bw())
 
@@ -46,15 +47,23 @@ server <- function(input, output) {
       labs(y = '', x = '', fill = '', color = '')
 
     if(input$show_typeII){
+
+      typeII <- pnorm(abs(x_crit), mean = input$true_mean, sd = input$true_sd/sqrt(input$n)) -
+        pnorm(-abs(x_crit), mean = input$true_mean, sd = input$true_sd/sqrt(input$n))
+      label <- grobTree(textGrob(paste("Type II:", typeII), x = 0.975, y = 0.95,
+                                 hjust = 1, gp = gpar(fontsize = 18, fontface = 'bold', col = 'red')))
+
       out_plot <- out_plot +
         geom_area(data = dat_tibble %>%
                     filter(x <= abs(x_crit),
                            x >= -abs(x_crit)),
                   aes(x = x, y = y_true, fill = "Type II"),
-                  alpha = 0.5)
+                  alpha = 0.5) +
+        annotation_custom(label)
     }
 
     if(input$show_typeI){
+
       out_plot <- out_plot +
         geom_area(data = dat_tibble %>%
                     filter(x <= -abs(x_crit)),
@@ -67,6 +76,12 @@ server <- function(input, output) {
     }
 
     if(input$show_power){
+
+      power <- pnorm(abs(x_crit), mean = input$true_mean, sd = input$true_sd/sqrt(input$n), lower.tail = F) +
+        pnorm(-abs(x_crit), mean = input$true_mean, sd = input$true_sd/sqrt(input$n))
+      label <- grobTree(textGrob(paste("Power:", power), x = 0.975, y = 0.9,
+                                 hjust = 1, gp = gpar(fontsize = 18, fontface = 'bold', col = 'red')))
+
       out_plot <- out_plot +
         geom_area(data = dat_tibble %>%
                     filter(x <= -abs(x_crit)),
@@ -75,7 +90,9 @@ server <- function(input, output) {
         geom_area(data = dat_tibble %>%
                     filter(x >= abs(x_crit)),
                   aes(y = y_true, fill = "Power"),
-                  alpha = 0.5)
+                  alpha = 0.5) +
+        annotation_custom(label)
+
     }
 
     return(out_plot)
