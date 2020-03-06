@@ -59,7 +59,8 @@ server <- function(input, output) {
                            x >= -abs(x_crit)),
                   aes(x = x, y = y_true, fill = "Type II"),
                   alpha = 0.5) +
-        annotation_custom(label)
+        annotation_custom(label) +
+        theme(text = element_text(size = 24))
     }
 
     if(input$show_typeI){
