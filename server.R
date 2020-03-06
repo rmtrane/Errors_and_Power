@@ -20,31 +20,62 @@ line_colors <- setNames(all_colors[c(1,5)], c('Hypothesized', 'True'))
 # Define server logic required to draw a histogram
 server <- function(input, output) {
 
+  output$x_limits <- renderUI({
+    sliderInput(inputId = "x_limits",
+                label = "Override Default x-axis limits",
+                min = -20,
+                max = input$true_mean + 20,
+                ticks = FALSE,
+                #ticks = c(0, input$true_mean),
+                value = c(-10, 10))
+  })
+
   output$main_plot <- renderPlot({
 
     x_crit <- qnorm(p = 1-input$alpha/2, sd = input$true_sd/sqrt(input$n))
 
-    dat_tibble <- tibble(x = seq(-input$true_sd*3, input$true_mean + input$true_sd*3, by = 0.01)) %>%
+#     if(input$true_mean < 0.2){
+#       x_breaks <- 0
+#       x_labels <- expression(mu[0])
+#     } else {
+#       x_breaks <- c(0, input$true_mean)
+#       x_labels <- c(expression(mu[0]),
+#                     expression(mu[A]))
+#     }
+
+    x_min <- input$x_limits[1] # ifelse(input$advanced, input$x_limits[1], -10)
+    x_max <- input$x_limits[2]# ifelse(input$advanced, input$x_limits[2], 10)
+
+    dat_tibble <- tibble(x = seq(x_min, input$true_mean + x_max, by = 0.01)) %>%
       mutate(y_hypo = dnorm(x, sd = input$true_sd/sqrt(input$n)),
              y_true = dnorm(x, mean = input$true_mean, sd = input$true_sd/sqrt(input$n)))
     # draw the histogram with the specified number of bins
     out_plot <- ggplot(data = dat_tibble,
                        aes(x = x)) +
-      geom_line(aes(y = y_hypo, color = 'Hypothesized')) +
-      geom_line(aes(y = y_true, color = 'True')) +
+      geom_line(aes(y = y_true, color = 'T')) +
+      geom_line(aes(y = y_hypo, color = 'H')) +
+      geom_vline(data = NULL,
+                 aes(xintercept = input$true_mean,
+                     color = 'T'),
+                 linetype = 'dashed') +
       geom_vline(data = NULL,
                  linetype = 'dashed',
                  aes(xintercept = 0,
-                     color = 'Hypothesized')) +
-      geom_vline(data = NULL,
-                 aes(xintercept = input$true_mean,
-                     color = 'True'),
-                 linetype = 'dashed') +
+                     color = 'H')) +
       geom_vline(xintercept = c(-1,1)*x_crit,
-                 color = 'red', linetype = 'dashed') +
-      scale_y_continuous(expand = expand_scale(mult = c(0,0.1))) +
+                 color = 'blue', linetype = 'dashed',
+                 size = 1) +
+      scale_x_continuous(breaks = c(0, input$true_mean),
+                         labels = c(expression(mu[0]),
+                                    expression(mu[A])),
+                         guide = guide_axis(check.overlap = TRUE)) +
+      scale_y_continuous(limits = c(0, NA),
+                         expand = expansion(add = c(0,0), mult = c(0,0.1))) +
       scale_fill_manual(values = fill_colors) +
-      labs(y = '', x = '', fill = '', color = '')
+      scale_color_manual(values = c("black", "red"),
+                         labels = c(expression(mu[0], mu[A]))) +
+      labs(y = '', x = '', fill = '', color = '') +
+      theme(text = element_text(size = 24))
 
     if(input$show_typeII){
 
@@ -59,8 +90,7 @@ server <- function(input, output) {
                            x >= -abs(x_crit)),
                   aes(x = x, y = y_true, fill = "Type II"),
                   alpha = 0.5) +
-        annotation_custom(label) +
-        theme(text = element_text(size = 24))
+        annotation_custom(label)
     }
 
     if(input$show_typeI){

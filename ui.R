@@ -1,6 +1,9 @@
 # Define UI for application that draws a histogram
 fluidPage(
-
+  # Get rid of numbers from slider
+  tags$head(tags$style(HTML('.irs-from, .irs-to, .irs-min, .irs-max {
+            visibility: hidden !important;
+    }'))),
   # Application title
   titlePanel("Type I Error related to Type II Error"),
 
@@ -41,7 +44,7 @@ fluidPage(
         sliderInput("true_sd",
                     HTML("True Standard Deviation (&sigma;)"),
                     min = 0.1,
-                    max = 10,
+                    max = 5,
                     value = 1,
                     step = 0.1)
       )
@@ -52,13 +55,26 @@ fluidPage(
                                      "Show Type I Error",
                                      value = FALSE)),
       conditionalPanel("input.true_mean != 0",
-                       checkboxInput("show_typeII",
-                                     "Show Type II Error",
-                                     value = FALSE),
-                       checkboxInput("show_power",
-                                     "Show Power",
-                                     value = FALSE))
+                       column(
+                         6,
+                         checkboxInput("show_typeII",
+                                       "Show Type II Error",
+                                       value = FALSE)
+                       ),
+                       column(
+                         6,
+                         checkboxInput("show_power",
+                                       "Show Power",
+                                       value = FALSE)
+                       )
+      )
     )
   ),
-  plotOutput("main_plot")
+  plotOutput("main_plot"),
+  wellPanel(
+    checkboxInput(inputId = "advanced",
+                  label = "Advanced Options"),
+    conditionalPanel("input.advanced",
+                     uiOutput("x_limits"))
+  )
 )
